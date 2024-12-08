@@ -26,7 +26,7 @@ class MarkdownCommentsParser:
                 self.md_tokens = self.md.parse(self.md_text)
                 self.md_tree = SyntaxTreeNode(self.md_tokens)
         except FileNotFoundError:
-            logger.error(f"File {self.md_path} not found.")
+            logger.info(f"File {self.md_path} not found.")
             self.md_tokens = []
 
         self.parse_comments()

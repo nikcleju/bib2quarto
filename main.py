@@ -1,5 +1,6 @@
 import logging
 import time
+import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from converter import Converter
@@ -12,6 +13,11 @@ class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, converter):
         self.converter = converter
 
+        # If output file doesn't exist, create it
+        if not os.path.exists(self.converter.md_path):
+            logging.info(f"Output file {self.converter.md_path} does not exist. Creating it.")
+            self.converter.to_markdown()
+
     def on_modified(self, event):
         if event.src_path.endswith(".bib"):
             logging.info(f"{event.src_path} has been modified. Updating markdown.")
@@ -22,8 +28,8 @@ class FileChangeHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     converter = Converter(
-        "CeCitesc.bib",
-        "output.qmd",
+        "database.bib",
+        "database.qmd",
         "template.qmd"
     )
 

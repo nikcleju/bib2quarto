@@ -1,0 +1,47 @@
+---
+title: "List of Academic Papers"
+author: "Your Name"
+
+bibliography: database.bib
+csl: ieee_custom.csl     # customized to show full reference as citation
+link-citations: false
+---
+
+# Papers
+
+
+### LOF: identifying density-based local outliers (Unknown Paper)
+<br>@Breunig2000
+
+::: notes
+<!-- Breunig2000 -->
+
+
+
+:::
+
+
+### A tutorial on particle filtering and smoothing: fifteen years later (Unknown Paper)
+<br>@Doucet11atutorial
+
+::: notes
+<!-- Doucet11atutorial -->
+
+- TEST TEST TEST again 9
+
+:::
+
+
+### Isolation Forests and Deep Autoencoders for Industrial Screw Tightening Anomaly Detection (Unknown Paper)
+<br>@Ribeiro2022
+
+::: notes
+<!-- Ribeiro2022 -->
+
+Notes:
+
+- Promising results were obtained by two unsupervised learning ML algorithms: isolation forest (IForest) and deep dense autoencoders (AE).
+- cdc
+
+:::
+
