@@ -1,0 +1,12 @@
+---
+title: "List of Academic Papers"
+author: "Your Name"
+
+bibliography: {bib_file}
+csl: ieee_custom.csl     # customized to show full reference as citation
+link-citations: false
+---
+
+# Papers
+
+{bibtex}
