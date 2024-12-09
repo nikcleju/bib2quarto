@@ -1,6 +1,5 @@
 bibtexparser
-mistune
 markdown-it-py
 mdit-py-plugins
-mdformat
 watchdog
+omegaconf

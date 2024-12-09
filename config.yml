@@ -1,0 +1,11 @@
+sync:
+  - bib: "database.bib"
+    md: "database.qmd"
+    # template: "template.qmd"    # Optional
+
+  # Add some other pairs if needed
+  # - bib: "database2.bib"
+  #   md: "database2.md"
+  #   template: "template2.qmd"
+
+
