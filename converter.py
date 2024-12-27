@@ -7,37 +7,12 @@ from markdown_parser import MarkdownCommentsParser
 
 logger = logging.getLogger(__name__)
 
-class Converter:
-    def __init__(self, bib_path, md_path, md_template):
-        self.bib_path = bib_path
-        self.md_path = md_path
-        self.md_template = md_template
-
-        # # Load bibtex
-        # self.bib = self.load_bibtex()
-        # # Load markdown
-        # self.md = MarkdownCommentsParser(self.md_path)
-
-    def load_bibtex(self):
-        with open(self.bib_path, 'r') as bibfile:
-            parser = BibTexParser()
-            parser.customization = convert_to_unicode
-            return bibtexparser.load(bibfile, parser)
-
-    def create_bibtex_md(self, ID_list=None):
-        if ID_list is None:
-            ID_list = [entry['ID'] for entry in self.bib.entries]
-
-        markdown_list = []
-        for entry in self.bib.entries:
-            if entry['ID'] in ID_list:
-                markdown_list.append(self.build_paper_md(entry))
-        return "\n".join(markdown_list)
-
-    def build_paper_md(self, entry):
-        template = """
-### {title} ({paper})
-<br>@{ID}
+# Markdown entry template to be used in the markdown file
+md_entry_template = """
+### {title} ({ID})
+:::{style="font-size: 10pt;"}
+@{ID}
+:::
 
 ::: notes
 <!-- {ID} -->
@@ -46,14 +21,90 @@ class Converter:
 
 :::
 """
+# md_entry_template = """
+# ### {title} ({ID})
+# <br>@{ID}
+
+# ::: notes
+# <!-- {ID} -->
+
+# {comment}
+
+# :::
+# """
+
+
+class Converter:
+    """
+    Converts between bibtex and markdown formats.
+    """
+
+    def __init__(self, bib_path, md_path, md_template):
+        """
+        Initializes the Converter with paths to the bibtex file, markdown file, and markdown template.
+
+        Args:
+            bib_path (str): Path to the bibtex file.
+            md_path (str): Path to the markdown file.
+            md_template (str): Path to the markdown template file.
+        """
+        self.bib_path = bib_path
+        self.md_path = md_path
+        self.md_template = md_template
+
+    def load_bibtex(self):
+        """
+        Loads the bibtex file.
+
+        Returns:
+            BibDatabase: The loaded bibtex database.
+        """
+        with open(self.bib_path, 'r') as bibfile:
+            parser = BibTexParser()
+            parser.customization = convert_to_unicode
+            return bibtexparser.load(bibfile, parser)
+
+    def generate_markdown_from_bibtex(self, ID_list=None):
+        """
+        Creates markdown content from the bibtex entries.
+
+        Args:
+            ID_list (list, optional): List of entry IDs to include in the markdown. If None, includes all entries.
+
+        Returns:
+            str: The generated markdown content.
+        """
+        if ID_list is None:
+            ID_list = [entry['ID'] for entry in self.bib.entries]
+
+        markdown_list = []
+        for entry in self.bib.entries:
+            if entry['ID'] in ID_list:
+                markdown_list.append(self.build_markdown_entry(entry))
+        return "\n".join(markdown_list)
+
+    def build_markdown_entry(self, entry):
+        """
+        Builds markdown content for a single bibtex entry.
+
+        Args:
+            entry (dict): The bibtex entry.
+
+        Returns:
+            str: The generated markdown content for the entry.
+        """
+
         title = entry['title']
         ID = entry['ID']
-        paper = entry.get('paper', 'Unknown Paper')
         comment = entry.get('comment', '')
 
-        return template.format(title=title, ID=ID, paper=paper, comment=comment)
+        return md_entry_template.format(title=title, ID=ID, comment=comment)
 
-    def write_full_markdown(self):
+    def write_initial_markdown(self):
+        """
+        Writes the full markdown content to the markdown file.
+        If the markdown file already exists, logs a message and exits.
+        """
         if os.path.exists(self.md_path):
             logger.info(f"Output file {self.md_path} already exists. Exiting.")
             return
@@ -64,39 +115,43 @@ class Converter:
                 template = f.read()
                 output += template.format(
                     bib_file=self.bib_path,
-                    bibtex=self.create_bibtex_md()
+                    bibtex=self.generate_markdown_from_bibtex()
                 )
 
         with open(self.md_path, 'w') as mdfile:
             mdfile.write(output)
 
-
-    def update_markdown(self):
-
+    def append_new_entries_to_markdown(self):
+        """
+        Updates the markdown file with new bibtex entries.
+        """
         # Open the markdown file for appending
         with open(self.md_path, 'a') as mdfile:
             # Add only the new entries, if any
             IDs_to_add = [entry['ID'] for entry in self.bib.entries if entry['ID'] not in self.md]
             mdfile.write(
-                self.create_bibtex_md(IDs_to_add)
+                self.generate_markdown_from_bibtex(IDs_to_add)
             )
 
-    def to_markdown(self):
-
+    def bibtex_to_markdown(self):
+        """
+        Converts the bibtex file to markdown format and writes/updates the markdown file.
+        """
         # Read the bibtex and markdown files
         self.bib = self.load_bibtex()
         self.md = MarkdownCommentsParser(self.md_path)
 
         if not os.path.exists(self.md_path):
             logger.debug(f"Output file {self.md_path} does not exist. Creating new file.")
-            self.write_full_markdown()
-
+            self.write_initial_markdown()
         else:
             logger.debug(f"Output file {self.md_path} exists. Updating.")
-            self.update_markdown()
+            self.append_new_entries_to_markdown()
 
-    def to_bibtex(self):
-
+    def markdown_to_bibtex(self):
+        """
+        Converts the markdown file to bibtex format and updates the bibtex file.
+        """
         # Read the bibtex and markdown files
         self.bib = self.load_bibtex()
         self.md = MarkdownCommentsParser(self.md_path)
@@ -119,7 +174,6 @@ class Converter:
             logger.info("Encoding line not found")
 
         with open(self.bib_path, 'w') as bibfile:
-
             # Write the encoding line
             if encoding_line is not None:
                 bibfile.write(encoding_line + '\n')

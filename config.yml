@@ -1,7 +1,10 @@
 sync:
-  - bib: "database.bib"
-    md: "database.qmd"
-    # template: "template.qmd"    # Optional
+  # - bib: "database.bib"
+  #   md: "database.qmd"
+  #   # template: "template.qmd"    # Optional
+
+  - bib: "/mnt/D/Documentatie/TrafAlert/TrafAlert.bib"
+    md: "/mnt/D/Documentatie/TrafAlert/TrafAlert.qmd"
 
   # Add some other pairs if needed
   # - bib: "database2.bib"

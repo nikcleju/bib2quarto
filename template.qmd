@@ -5,6 +5,10 @@ author: "Your Name"
 bibliography: {bib_file}
 csl: ieee_custom.csl     # customized to show full reference as citation
 link-citations: false
+
+toc: true
+toc-location: left
+page-layout: full
 ---
 
 # Papers
