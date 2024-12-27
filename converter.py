@@ -1,42 +1,17 @@
 import os
 import logging
+from itertools import pairwise, chain
 import bibtexparser
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.customization import convert_to_unicode
-from markdown_parser import MarkdownCommentsParser
+from markdown_parser import MarkdownParser
 
 logger = logging.getLogger(__name__)
 
-# Markdown entry template to be used in the markdown file
-md_entry_template = """
-### {title} ({ID})
-:::{style="font-size: 10pt;"}
-@{ID}
-:::
-
-::: notes
-<!-- {ID} -->
-
-{comment}
-
-:::
-"""
-# md_entry_template = """
-# ### {title} ({ID})
-# <br>@{ID}
-
-# ::: notes
-# <!-- {ID} -->
-
-# {comment}
-
-# :::
-# """
-
-
 class Converter:
     """
-    Converts between bibtex and markdown formats.
+    Converts bibtex files to markdown and vice versa.
+    Uses MarkdownParser to parse and update markdown files.
     """
 
     def __init__(self, bib_path, md_path, md_template):
@@ -64,89 +39,45 @@ class Converter:
             parser.customization = convert_to_unicode
             return bibtexparser.load(bibfile, parser)
 
-    def generate_markdown_from_bibtex(self, ID_list=None):
+    def initialize_markdown(self):
         """
-        Creates markdown content from the bibtex entries.
-
-        Args:
-            ID_list (list, optional): List of entry IDs to include in the markdown. If None, includes all entries.
-
-        Returns:
-            str: The generated markdown content.
+        Initializes the markdown file with the template content.
         """
-        if ID_list is None:
-            ID_list = [entry['ID'] for entry in self.bib.entries]
-
-        markdown_list = []
-        for entry in self.bib.entries:
-            if entry['ID'] in ID_list:
-                markdown_list.append(self.build_markdown_entry(entry))
-        return "\n".join(markdown_list)
-
-    def build_markdown_entry(self, entry):
-        """
-        Builds markdown content for a single bibtex entry.
-
-        Args:
-            entry (dict): The bibtex entry.
-
-        Returns:
-            str: The generated markdown content for the entry.
-        """
-
-        title = entry['title']
-        ID = entry['ID']
-        comment = entry.get('comment', '')
-
-        return md_entry_template.format(title=title, ID=ID, comment=comment)
-
-    def write_initial_markdown(self):
-        """
-        Writes the full markdown content to the markdown file.
-        If the markdown file already exists, logs a message and exits.
-        """
-        if os.path.exists(self.md_path):
-            logger.info(f"Output file {self.md_path} already exists. Exiting.")
-            return
-
-        output = ""
-        if self.md_template is not None:
-            with open(self.md_template, 'r') as f:
-                template = f.read()
-                output += template.format(
+        with open(self.md_template, 'r') as f:
+            template = f.read()
+            with open(self.md_path, 'w') as mdfile:
+                mdfile.write(template.format(
                     bib_file=self.bib_path,
-                    bibtex=self.generate_markdown_from_bibtex()
-                )
-
-        with open(self.md_path, 'w') as mdfile:
-            mdfile.write(output)
-
-    def append_new_entries_to_markdown(self):
-        """
-        Updates the markdown file with new bibtex entries.
-        """
-        # Open the markdown file for appending
-        with open(self.md_path, 'a') as mdfile:
-            # Add only the new entries, if any
-            IDs_to_add = [entry['ID'] for entry in self.bib.entries if entry['ID'] not in self.md]
-            mdfile.write(
-                self.generate_markdown_from_bibtex(IDs_to_add)
-            )
+                    bibtex=""
+                ))
 
     def bibtex_to_markdown(self):
         """
         Converts the bibtex file to markdown format and writes/updates the markdown file.
         """
-        # Read the bibtex and markdown files
+        # Read the bibtex file
         self.bib = self.load_bibtex()
-        self.md = MarkdownCommentsParser(self.md_path)
 
+        # Read/initialize the markdown file
         if not os.path.exists(self.md_path):
             logger.debug(f"Output file {self.md_path} does not exist. Creating new file.")
-            self.write_initial_markdown()
-        else:
-            logger.debug(f"Output file {self.md_path} exists. Updating.")
-            self.append_new_entries_to_markdown()
+            self.initialize_markdown()
+        self.md = MarkdownParser(self.md_path)
+
+        # Update the markdown file, adding only the new entries, if any
+        IDs_to_add = []
+        Ids_to_add_prev = []
+        # Go in pairs of two, to keep previous ID.
+        for prev_entry, entry in pairwise(chain([None], self.bib.entries)):
+            if entry['ID'] not in self.md:
+                IDs_to_add.append(entry['ID'])
+                Ids_to_add_prev.append(prev_entry['ID'] if prev_entry is not None else None)
+
+        for prev_ID, ID in zip(Ids_to_add_prev, IDs_to_add):
+            self.md.add_section(key=ID,
+                                title=self.bib.entries_dict[ID]['title'],
+                                notes=self.bib.entries_dict[ID].get('comment', ''),
+                                after_key=prev_ID)
 
     def markdown_to_bibtex(self):
         """
@@ -154,14 +85,24 @@ class Converter:
         """
         # Read the bibtex and markdown files
         self.bib = self.load_bibtex()
-        self.md = MarkdownCommentsParser(self.md_path)
+        self.md = MarkdownParser(self.md_path)
 
-        # Update bibtex entries
-        for entry in self.bib.entries:
-            if entry['ID'] in self.md:
-                entry['comment'] = self.md[entry['ID']]
-            else:
-                logger.debug(f"Comment for {entry['ID']} not found in markdown")
+        # Compare the keys in the bibtex and markdown files
+        bibtex_keys = set([entry['ID'] for entry in self.bib.entries])
+        md_keys = set(self.md.md_sections.keys())
+        bibtex_not_in_md = bibtex_keys - md_keys
+        md_not_in_bibtex = md_keys - bibtex_keys
+        common_keys = bibtex_keys & md_keys
+
+        # Warn about missing keys
+        if bibtex_not_in_md:
+            logger.info(f"Keys in bibtex but not in markdown: {bibtex_not_in_md}")
+        if md_not_in_bibtex:
+            logger.info(f"Keys in markdown but not in bibtex: {md_not_in_bibtex}")
+
+        # Update common entries in the bibtex file
+        for key in common_keys:
+            self.bib.entries_dict[key]['comment'] = self.md[key].notes
 
         # JabRef: Get the encoding line
         encoding_line = None

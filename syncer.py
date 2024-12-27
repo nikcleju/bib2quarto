@@ -29,6 +29,12 @@ class Bib2QuartoSyncer:
             logging.info(f"Output file {self.converter.md_path} does not exist. Creating it.")
             self.converter.bibtex_to_markdown()
 
+        else:
+            # Do a one-time sync
+            logging.info(f"Output file {self.converter.md_path} exists. Syncing with {self.converter.bib_path}.")
+            self.converter.markdown_to_bibtex()
+            self.converter.bibtex_to_markdown()
+
         self.create_bib_observer()
         self.create_md_observer()
 
@@ -43,19 +49,20 @@ class Bib2QuartoSyncer:
 
         if hasattr(self, 'observer_bib'):
             self.observer_bib.stop()
-            self.observer_bib.join()
+            #self.observer_bib.join()
         self.observer_bib = Observer()
         event_handler = BibChangeHandler(self.converter,
                                          callback_pre=self.remove_md_observer,
                                          callback_post=self.create_md_observer)
         self.observer_bib.schedule(event_handler, path=self.converter.bib_path, recursive=False)
+        self.observer_bib.start()
 
     def remove_bib_observer(self):
         """
         Stops and removes the observer monitoring the bibliography file.
         """
         self.observer_bib.stop()
-        self.observer_bib.join()
+        #self.observer_bib.join()
         del self.observer_bib
 
     def create_md_observer(self):
@@ -67,19 +74,20 @@ class Bib2QuartoSyncer:
         """
         if hasattr(self, 'observer_md'):
             self.observer_md.stop()
-            self.observer_md.join()
+            #self.observer_md.join()
         self.observer_md = Observer()
         event_handler = MdChangeHandler(self.converter,
                                         callback_pre=self.remove_bib_observer,
                                         callback_post=self.create_bib_observer)
         self.observer_md.schedule(event_handler, path=self.converter.md_path, recursive=False)
+        self.observer_md.start()
 
     def remove_md_observer(self):
         """
         Stops and removes the observer monitoring the markdown file.
         """
         self.observer_md.stop()
-        self.observer_md.join()
+        #self.observer_md.join()
         del self.observer_md
 
     def run(self):
@@ -87,9 +95,7 @@ class Bib2QuartoSyncer:
         Starts the observers and keeps the script running to monitor file changes.
         Stops the observers on a keyboard interrupt.
         """
-        logging.info(f"Starting observers for {self.converter.bib_path} and {self.converter.md_path}.")
-        self.observer_bib.start()
-        self.observer_md.start()
+        logging.info(f"Syncing {self.converter.bib_path} and {self.converter.md_path}.")
         try:
             while True:
                 time.sleep(1)

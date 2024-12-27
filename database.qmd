@@ -5,38 +5,48 @@ author: "Your Name"
 bibliography: database.bib
 csl: ieee_custom.csl     # customized to show full reference as citation
 link-citations: false
+
+toc: true
+toc-location: left
+page-layout: full
 ---
 
 # Papers
 
 
-### LOF: identifying density-based local outliers (Unknown Paper)
+### LOF: identifying density-based local outliers
+::: {style="font-size: 10pt;"}
+\@Breunig2000
 <br>@Breunig2000
+:::
 
 ::: notes
-<!-- Breunig2000 -->
 
-
+This is a test comment. v9
 
 :::
 
-
-### A tutorial on particle filtering and smoothing: fifteen years later (Unknown Paper)
+### A tutorial on particle filtering and smoothing: fifteen years later
+::: {style="font-size: 10pt;"}
+\@Doucet11atutorial
 <br>@Doucet11atutorial
+:::
 
 ::: notes
-<!-- Doucet11atutorial -->
+
 
 - TEST TEST TEST again 9
 
 :::
 
-
-### Isolation Forests and Deep Autoencoders for Industrial Screw Tightening Anomaly Detection (Unknown Paper)
+### Isolation Forests and Deep Autoencoders for Industrial Screw Tightening Anomaly Detection
+::: {style="font-size: 10pt;"}
+\@Ribeiro2022
 <br>@Ribeiro2022
+:::
 
 ::: notes
-<!-- Ribeiro2022 -->
+
 
 Notes:
 
@@ -44,4 +54,3 @@ Notes:
 - cdc
 
 :::
-

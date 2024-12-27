@@ -55,6 +55,8 @@ The `.bib` file follows the JabRef format, i.e. the comments are stored in the `
     ```
     The default configuration file is `config.yml`.
 
+    You can also modify the shell script `bib2quarto.sh` to run the app.
+
 4. The app watches for changes in the BibTeX and Markdown files:
     - If the BibTeX file is updated, the Markdown file will be automatically updated.
     - If the Markdown file is updated, the BibTeX file will be updated accordingly.
